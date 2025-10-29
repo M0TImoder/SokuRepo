@@ -3,10 +3,26 @@
 <head>
   <meta charset="utf-8" />
   <title>即レポ</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>即レポ（プロトタイプ）</h1>
-  <p>動作テスト中</p>
+
+  <!-- パレット -->
+  <div id="palette">
+    <div class="item" draggable="true" data-symbol="+">+</div>
+    <div class="item" draggable="true" data-symbol="-">-</div>
+    <div class="item" draggable="true" data-symbol="×">×</div>
+    <div class="item" draggable="true" data-symbol="÷">÷</div>
+  </div>
+
+  <!-- キャンバス -->
+  <div id="canvasArea"></div>
+
+  <!-- 右クリックメニュー -->
+  <div id="contextMenu">
+    <div id="addBlockBtn">数式ブロックを追加</div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

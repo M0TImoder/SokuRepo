@@ -1,0 +1,56 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+}
+
+#palette {
+  width: 120px;
+  background: #222;
+  color: white;
+  padding: 10px;
+}
+
+#palette .item {
+  background: #444;
+  padding: 8px;
+  margin-bottom: 8px;
+  cursor: grab;
+  text-align: center;
+}
+
+#canvasArea {
+  flex: 1;
+  background: #f4f4f4;
+  position: relative;
+  overflow: hidden;
+}
+
+.block {
+  position: absolute;
+  border: 2px dashed #555;
+  background: white;
+  width: 150px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  font-size: 20px;
+}
+
+#contextMenu {
+  position: absolute;
+  background: white;
+  border: 1px solid #aaa;
+  display: none;
+  z-index: 1000;
+}
+
+#contextMenu div {
+  padding: 8px;
+  cursor: pointer;
+}
+#contextMenu div:hover {
+  background: #eee;
+}
