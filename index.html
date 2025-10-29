@@ -3,22 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <title>即レポ</title>
+
   <link rel="stylesheet" href="style.css">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
 </head>
 <body>
 
-  <!-- パレット -->
   <div id="palette">
-    <div class="item" draggable="true" data-symbol="+">+</div>
-    <div class="item" draggable="true" data-symbol="-">-</div>
-    <div class="item" draggable="true" data-symbol="×">×</div>
-    <div class="item" draggable="true" data-symbol="÷">÷</div>
+    <div class="item" draggable="true" data-type="var">文字</div>
+    <div class="item" draggable="true" data-type="number">数字</div>
+    <div class="item" draggable="true" data-type="fraction">分数</div>
+    <div class="item" draggable="true" data-type="sqrt">√</div>
   </div>
 
-  <!-- キャンバス -->
   <div id="canvasArea"></div>
 
-  <!-- 右クリックメニュー -->
   <div id="contextMenu">
     <div id="addBlockBtn">数式ブロックを追加</div>
   </div>

@@ -1,11 +1,12 @@
 body {
   margin: 0;
-  font-family: sans-serif;
   display: flex;
+  font-family: sans-serif;
+  user-select: none;
 }
 
 #palette {
-  width: 120px;
+  width: 140px;
   background: #222;
   color: white;
   padding: 10px;
@@ -23,34 +24,23 @@ body {
   flex: 1;
   background: #f4f4f4;
   position: relative;
-  overflow: hidden;
 }
 
 .block {
   position: absolute;
   border: 2px dashed #555;
   background: white;
-  width: 150px;
-  height: 60px;
+  width: 200px;
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: move;
-  font-size: 20px;
 }
 
-#contextMenu {
-  position: absolute;
-  background: white;
-  border: 1px solid #aaa;
-  display: none;
-  z-index: 1000;
-}
-
-#contextMenu div {
-  padding: 8px;
-  cursor: pointer;
-}
-#contextMenu div:hover {
-  background: #eee;
+.placeholder {
+  background: #ffe2e2;
+  border: 1px dashed red;
+  padding: 2px 4px;
+  cursor: text;
 }
