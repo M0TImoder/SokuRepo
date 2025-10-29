@@ -1,23 +1,68 @@
+const workspace = document.querySelector(".workspace");
 const canvas = document.getElementById("canvasArea");
 const contextMenu = document.getElementById("contextMenu");
 const addBlockBtn = document.getElementById("addBlockBtn");
+const gridToggle = document.getElementById("gridToggle");
+const snapToggle = document.getElementById("snapToggle");
 
 let menuX = 0;
 let menuY = 0;
 
-// 右クリックメニュー
-canvas.addEventListener("contextmenu", e => {
-  e.preventDefault();
-  menuX = e.clientX;
-  menuY = e.clientY;
+const GRID_SIZE = 48;
+let snapEnabled = true;
 
-  contextMenu.style.left = menuX + "px";
-  contextMenu.style.top = menuY + "px";
+function snapValue(value)
+{
+  return Math.round(value / GRID_SIZE) * GRID_SIZE;
+}
+
+function updateGridVisibility(isVisible)
+{
+  if (isVisible)
+  {
+    workspace.classList.add("grid-visible");
+    workspace.classList.remove("grid-hidden");
+    canvas.classList.remove("grid-hidden");
+    return;
+  }
+
+  workspace.classList.add("grid-hidden");
+  workspace.classList.remove("grid-visible");
+  canvas.classList.add("grid-hidden");
+}
+
+updateGridVisibility(true);
+
+gridToggle.addEventListener("change", () =>
+{
+  updateGridVisibility(gridToggle.checked);
+});
+
+snapToggle.addEventListener("change", () =>
+{
+  snapEnabled = snapToggle.checked;
+});
+
+// 右クリックメニュー
+canvas.addEventListener("contextmenu", (e) =>
+{
+  e.preventDefault();
+
+  const rect = canvas.getBoundingClientRect();
+  menuX = e.clientX - rect.left;
+  menuY = e.clientY - rect.top;
+
+  contextMenu.style.left = `${e.clientX}px`;
+  contextMenu.style.top = `${e.clientY}px`;
   contextMenu.style.display = "block";
 });
 
-document.addEventListener("click", () => {
-  contextMenu.style.display = "none";
+document.addEventListener("click", (e) =>
+{
+  if (!contextMenu.contains(e.target))
+  {
+    contextMenu.style.display = "none";
+  }
 });
 
 /*
@@ -28,13 +73,16 @@ document.addEventListener("click", () => {
   type: "sqrt", inside
 */
 
-function makePlaceholder() {
+function makePlaceholder()
+{
   return { type: "placeholder" };
 }
 
 // LaTeXに変換
-function toLatex(node) {
-  switch (node.type) {
+function toLatex(node)
+{
+  switch (node.type)
+  {
     case "placeholder":
       return "□";
     case "var":
@@ -46,14 +94,27 @@ function toLatex(node) {
     case "sqrt":
       return `\\sqrt{${toLatex(node.inside)}}`;
   }
+
+  return "";
 }
 
 // ブロック追加
-addBlockBtn.addEventListener("click", () => {
+addBlockBtn.addEventListener("click", () =>
+{
   const block = document.createElement("div");
   block.className = "block";
-  block.style.left = menuX + "px";
-  block.style.top = menuY + "px";
+
+  let left = menuX;
+  let top = menuY;
+
+  if (snapEnabled)
+  {
+    left = snapValue(left);
+    top = snapValue(top);
+  }
+
+  block.style.left = `${Math.max(0, left)}px`;
+  block.style.top = `${Math.max(0, top)}px`;
 
   // ノードは空白
   block.node = makePlaceholder();
@@ -65,19 +126,23 @@ addBlockBtn.addEventListener("click", () => {
   makeDraggable(block);
   canvas.appendChild(block);
   render(block);
+  contextMenu.style.display = "none";
 });
 
 // ブロック描画
-function render(block) {
+function render(block)
+{
   const span = block.querySelector(".formula");
   const latex = toLatex(block.node);
 
   katex.render(latex, span, { throwOnError: false });
 
-  // KaTeX内の □ をクリック可能にする
+  // KaTeX内の□をクリック可能にする
   const elements = span.querySelectorAll(".mord");
-  elements.forEach(el => {
-    if (el.textContent === "□") {
+  elements.forEach((el) =>
+  {
+    if (el.textContent === "□")
+    {
       el.classList.add("placeholder");
       el.addEventListener("click", () => editPlaceholder(block, el));
     }
@@ -85,26 +150,34 @@ function render(block) {
 }
 
 // placeholderを編集
-function editPlaceholder(block, el) {
+function editPlaceholder(block, el)
+{
   const input = document.createElement("input");
   input.type = "text";
 
   const rect = el.getBoundingClientRect();
   input.style.position = "absolute";
-  input.style.left = rect.left + "px";
-  input.style.top = rect.top + "px";
-  input.style.width = rect.width + "px";
+  input.style.left = `${rect.left}px`;
+  input.style.top = `${rect.top}px`;
+  input.style.width = `${rect.width}px`;
 
   document.body.appendChild(input);
   input.focus();
 
-  input.addEventListener("blur", () => finishInput(block, el, input));
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter") finishInput(block, el, input);
+  const finish = () => finishInput(block, el, input);
+
+  input.addEventListener("blur", finish);
+  input.addEventListener("keydown", (e) =>
+  {
+    if (e.key === "Enter")
+    {
+      finish();
+    }
   });
 }
 
-function finishInput(block, el, input) {
+function finishInput(block, el, input)
+{
   const value = input.value.trim() || "□";
   //ノード書き換え
   replacePlaceholder(block.node, value);
@@ -112,23 +185,30 @@ function finishInput(block, el, input) {
   render(block);
 }
 
-function replacePlaceholder(node, value) {
-  if (node.type === "placeholder") {
-    if (/^[0-9]+$/.test(value)) {
+function replacePlaceholder(node, value)
+{
+  if (node.type === "placeholder")
+  {
+    if (/^[0-9]+$/.test(value))
+    {
       node.type = "number";
       node.value = value;
-    } else {
+    }
+    else
+    {
       node.type = "var";
       node.name = value;
     }
     return true;
   }
 
-  if (node.type === "fraction") {
+  if (node.type === "fraction")
+  {
     return replacePlaceholder(node.numerator, value) ||
            replacePlaceholder(node.denominator, value);
   }
-  if (node.type === "sqrt") {
+  if (node.type === "sqrt")
+  {
     return replacePlaceholder(node.inside, value);
   }
   return false;
@@ -136,28 +216,35 @@ function replacePlaceholder(node, value) {
 
 // パレットのパーツ追加
 const items = document.querySelectorAll("#palette .item");
-items.forEach(item => {
-  item.addEventListener("dragstart", e => {
+items.forEach((item) =>
+{
+  item.addEventListener("dragstart", (e) =>
+  {
     e.dataTransfer.setData("text/type", item.dataset.type);
   });
 });
 
-canvas.addEventListener("dragover", e => e.preventDefault());
+canvas.addEventListener("dragover", (e) => e.preventDefault());
 
-canvas.addEventListener("drop", e => {
+canvas.addEventListener("drop", (e) =>
+{
   const type = e.dataTransfer.getData("text/type");
   const target = document.elementFromPoint(e.clientX, e.clientY);
 
-  if (target.classList.contains("block")) {
+  if (target && target.classList.contains("block"))
+  {
     const block = target;
     insertNode(block.node, type);
     render(block);
   }
 });
 
-function insertNode(node, type) {
-  if (node.type === "placeholder") {
-    switch (type) {
+function insertNode(node, type)
+{
+  if (node.type === "placeholder")
+  {
+    switch (type)
+    {
       case "var":
         node.type = "var";
         node.name = "x";
@@ -179,36 +266,64 @@ function insertNode(node, type) {
     return true;
   }
 
-  if (node.type === "fraction") {
+  if (node.type === "fraction")
+  {
     return insertNode(node.numerator, type) ||
            insertNode(node.denominator, type);
   }
-  if (node.type === "sqrt") {
+  if (node.type === "sqrt")
+  {
     return insertNode(node.inside, type);
   }
   return false;
 }
 
 // ブロックを動かす
-function makeDraggable(elem) {
-  let startX, startY, elemStartX, elemStartY;
+function makeDraggable(elem)
+{
+  let startX;
+  let startY;
+  let elemStartX;
+  let elemStartY;
 
-  elem.addEventListener("mousedown", e => {
-    if (e.button !== 0) return;
+  elem.addEventListener("mousedown", (e) =>
+  {
+    if (e.button !== 0)
+    {
+      return;
+    }
+
+    e.preventDefault();
 
     startX = e.pageX;
     startY = e.pageY;
-    elemStartX = parseInt(elem.style.left) || 0;
-    elemStartY = parseInt(elem.style.top) || 0;
+    elemStartX = parseFloat(elem.style.left) || 0;
+    elemStartY = parseFloat(elem.style.top) || 0;
 
-    function onMove(ev) {
-      elem.style.left = elemStartX + (ev.pageX - startX) + "px";
-      elem.style.top = elemStartY + (ev.pageY - startY) + "px";
+    function onMove(ev)
+    {
+      const deltaX = ev.pageX - startX;
+      const deltaY = ev.pageY - startY;
+
+      let nextX = elemStartX + deltaX;
+      let nextY = elemStartY + deltaY;
+
+      if (snapEnabled)
+      {
+        nextX = snapValue(nextX);
+        nextY = snapValue(nextY);
+      }
+
+      elem.style.left = `${Math.max(0, nextX)}px`;
+      elem.style.top = `${Math.max(0, nextY)}px`;
     }
-    function onUp() {
+
+    function onUp()
+    {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
     }
+
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
   });

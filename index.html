@@ -10,15 +10,38 @@
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
 </head>
 <body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">即レポパレット</div>
+      <div class="toggle-group">
+        <label class="toggle">
+          <input type="checkbox" id="gridToggle" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-text">グリッド表示</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="snapToggle" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-text">グリッドスナップ</span>
+        </label>
+      </div>
+    </header>
 
-  <div id="palette">
-    <div class="item" draggable="true" data-type="var">文字</div>
-    <div class="item" draggable="true" data-type="number">数字</div>
-    <div class="item" draggable="true" data-type="fraction">分数</div>
-    <div class="item" draggable="true" data-type="sqrt">√</div>
+    <main class="workspace">
+      <section class="canvas-wrapper">
+        <div id="canvasArea" class="grid-visible"></div>
+      </section>
+      <aside id="palette" class="palette">
+        <div class="palette-title">パレット</div>
+        <div class="palette-items">
+          <div class="item" draggable="true" data-type="var">文字</div>
+          <div class="item" draggable="true" data-type="number">数字</div>
+          <div class="item" draggable="true" data-type="fraction">分数</div>
+          <div class="item" draggable="true" data-type="sqrt">√</div>
+        </div>
+      </aside>
+    </main>
   </div>
-
-  <div id="canvasArea"></div>
 
   <div id="contextMenu">
     <div id="addBlockBtn">数式ブロックを追加</div>
