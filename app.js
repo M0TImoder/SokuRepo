@@ -37,21 +37,31 @@ addBlockBtn.addEventListener("click", () => {
 
 // ブロックをドラッグで移動
 function makeBlockDraggable(elem) {
-  let offsetX, offsetY;
+  let startX, startY;       // マウス押下位置
+  let elemStartX, elemStartY; // ブロックの押下時位置
 
   elem.addEventListener("mousedown", e => {
-    if (e.button !== 0) return;
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
+    if (e.button !== 0) return; // 左クリックのみ
+
+    startX = e.pageX;
+    startY = e.pageY;
+
+    // 現在のblock.left / block.topを数値化
+    elemStartX = parseInt(elem.style.left) || 0;
+    elemStartY = parseInt(elem.style.top) || 0;
 
     function onMove(ev) {
-      elem.style.left = ev.clientX - offsetX + "px";
-      elem.style.top = ev.clientY - offsetY + "px";
+      const dx = ev.pageX - startX;
+      const dy = ev.pageY - startY;
+      elem.style.left = elemStartX + dx + "px";
+      elem.style.top = elemStartY + dy + "px";
     }
+
     function onUp() {
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseup", onUp);
     }
+
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);
   });
