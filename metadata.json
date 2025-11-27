@@ -1,0 +1,5 @@
+{
+  "name": "SokuRepo",
+  "description": "A grid-snapping report generation tool specializing in math formulas.",
+  "requestFramePermissions": []
+}
