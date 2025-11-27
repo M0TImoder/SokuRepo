@@ -8,7 +8,9 @@ import { FileText, Grid3X3, Download } from 'lucide-react';
 export default function App() {
   const [blocks, setBlocks] = useState<BlockData[]>([]);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [scale, setScale] = useState(1);
   
+  // Drag state tracking
   const dragItemRef = useRef<PaletteItem | null>(null);
   const dragBlockIdRef = useRef<string | null>(null);
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -18,10 +20,12 @@ export default function App() {
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
 
+  // -- Global Keyboard Events (Delete/Backspace) --
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!selectedBlockId) return;
 
+      // Do not delete if the user is typing in an input/textarea
       const activeEl = document.activeElement;
       const isInputActive = activeEl && (
         activeEl.tagName === 'INPUT' || 
@@ -32,7 +36,7 @@ export default function App() {
       if (isInputActive) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
+        e.preventDefault(); // Prevent browser back navigation
         deleteBlock(selectedBlockId);
       }
     };
@@ -41,23 +45,60 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedBlockId]);
 
+  // -- Zoom Logic (Ctrl + Wheel) --
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = -e.deltaY;
+        // Use a small factor for smooth zooming
+        const factor = 0.001; 
+        
+        setScale((prev) => {
+           // Basic zoom calculation
+           const newScale = prev + delta * factor;
+           // Clamp between 0.1 and 5
+           return Math.max(0.1, Math.min(newScale, 5));
+        });
+      }
+    };
+
+    // Passive: false is required to prevent browser's default zoom
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+       container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
+  // -- Drag & Drop Logic --
+
+  // 1. Start dragging from Sidebar
   const handleSidebarDragStart = (e: React.DragEvent, item: PaletteItem) => {
     dragItemRef.current = item;
     dragBlockIdRef.current = null;
     dragOffsetRef.current = { x: 0, y: 0 };
     e.dataTransfer.effectAllowed = 'copy';
+    // Essential for Firefox to allow dragging
     e.dataTransfer.setData('application/json', JSON.stringify(item));
   };
 
+  // 2. Start dragging existing block on Canvas
   const handleBlockDragStart = (e: React.DragEvent, id: string) => {
     dragBlockIdRef.current = id;
     dragItemRef.current = null;
-    setSelectedBlockId(id);
+    setSelectedBlockId(id); // Select automatically when starting to drag
     e.dataTransfer.effectAllowed = 'move';
+    // Essential for Firefox to allow dragging
     e.dataTransfer.setData('text/plain', id);
 
+    // Use currentTarget to get the Block's element, not the inner target (like the grip icon)
     if (e.currentTarget instanceof Element) {
         const rect = e.currentTarget.getBoundingClientRect();
+        // Calculate offset in visual coordinates
         dragOffsetRef.current = {
             x: e.clientX - rect.left,
             y: e.clientY - rect.top
@@ -65,27 +106,41 @@ export default function App() {
     }
   };
 
+  // 3. Drop on Canvas
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
 
     if (!canvasRef.current) return;
 
     const rect = canvasRef.current.getBoundingClientRect();
-    let rawX = e.clientX - rect.left + canvasRef.current.scrollLeft;
-    let rawY = e.clientY - rect.top + canvasRef.current.scrollTop;
+    
+    // Calculate visual position relative to the canvas top-left
+    const visualX = e.clientX - rect.left;
+    const visualY = e.clientY - rect.top;
 
+    let targetVisualX = visualX;
+    let targetVisualY = visualY;
+
+    // Apply offset if moving an existing block
     if (dragBlockIdRef.current) {
-        rawX -= dragOffsetRef.current.x;
-        rawY -= dragOffsetRef.current.y;
+        targetVisualX -= dragOffsetRef.current.x;
+        targetVisualY -= dragOffsetRef.current.y;
     }
 
-    const snappedX = Math.round(rawX / GRID_SIZE) * GRID_SIZE;
-    const snappedY = Math.round(rawY / GRID_SIZE) * GRID_SIZE;
+    // Convert visual position to logical position by dividing by scale
+    const logicalX = targetVisualX / scale;
+    const logicalY = targetVisualY / scale;
 
+    const snappedX = Math.round(logicalX / GRID_SIZE) * GRID_SIZE;
+    const snappedY = Math.round(logicalY / GRID_SIZE) * GRID_SIZE;
+
+    // CRITICAL FIX: Capture the current refs into local variables.
+    // Inside the setBlocks callback, the ref might have already been reset to null.
     const draggedItem = dragItemRef.current;
     const draggedBlockId = dragBlockIdRef.current;
 
     if (draggedItem) {
+      // Handle creation based on palette item type
       const newId = crypto.randomUUID();
       const newItem: BlockData = {
         id: newId,
@@ -94,10 +149,11 @@ export default function App() {
         position: { x: snappedX, y: snappedY },
       };
       setBlocks((prev) => [...prev, newItem]);
-      setSelectedBlockId(newId);
+      setSelectedBlockId(newId); // Select the new block
       dragItemRef.current = null;
     } 
     else if (draggedBlockId) {
+      // Update existing block position
       setBlocks((prev) =>
         prev.map((b) =>
           b.id === draggedBlockId
@@ -107,12 +163,14 @@ export default function App() {
       );
       dragBlockIdRef.current = null;
     }
-  }, []);
+  }, [scale]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = dragItemRef.current ? 'copy' : 'move';
   };
+
+  // -- Block Management --
 
   const updateBlockContent = (id: string, newContent: string) => {
     setBlocks((prev) =>
@@ -127,6 +185,7 @@ export default function App() {
     }
   };
 
+  // Deselect when clicking the background canvas
   const handleCanvasClick = () => {
     setSelectedBlockId(null);
   };
@@ -227,9 +286,12 @@ export default function App() {
                 ref={canvasRef}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
-                onClick={handleCanvasClick}
-                className="min-w-[2000px] min-h-[2000px] relative"
-                style={gridBackgroundStyle}
+                onClick={handleCanvasClick} // Background click deselects
+                className="min-w-[2000px] min-h-[2000px] relative transition-transform duration-75 origin-top-left"
+                style={{
+                    ...gridBackgroundStyle,
+                    transform: `scale(${scale})`
+                }}
             >
                 {blocks.map((block) => (
                     <DraggableBlock
