@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/Sidebar';
 import { DraggableBlock } from './components/DraggableBlock';
-import type { BlockData, PaletteItem } from './types';
+import type { BlockData, PaletteItem, NestedBlock } from './types';
 import { GRID_SIZE } from './constants';
 import { FileText, Grid3X3, Download } from 'lucide-react';
 
@@ -23,6 +23,12 @@ export default function App() {
   const updateBlockContent = useCallback((id: string, newContent: string) => {
     setBlocks((prev) =>
       prev.map((b) => (b.id === id ? { ...b, content: newContent } : b))
+    );
+  }, []);
+
+  const updateBlockValues = useCallback((id: string, newValues: (string | NestedBlock)[]) => {
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, values: newValues } : b))
     );
   }, []);
 
@@ -104,6 +110,12 @@ export default function App() {
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    // 修正: e.preventDefault()の直後にe.defaultPreventedをチェックしていた行を削除しました
+    
+    // スロット（math-slot）の上でのドロップかどうかをチェックして無視する
+    // (万が一stopPropagationが漏れた場合や、ターゲット判定のずれ用)
+    const target = e.target as HTMLElement;
+    if (target.closest('.math-slot')) return;
 
     if (!canvasRef.current) return;
 
@@ -136,6 +148,7 @@ export default function App() {
         type: draggedItem.type || 'math',
         content: draggedItem.latex,
         position: { x: snappedX, y: snappedY },
+        values: draggedItem.defaultValues ? [...draggedItem.defaultValues] : undefined,
       };
       setBlocks((prev) => [...prev, newItem]);
       setSelectedBlockId(newId);
@@ -273,6 +286,7 @@ export default function App() {
                         onSelect={() => setSelectedBlockId(block.id)}
                         onDelete={deleteBlock}
                         onUpdateContent={updateBlockContent}
+                        onUpdateValues={updateBlockValues}
                         onDragStart={handleBlockDragStart}
                     />
                 ))}

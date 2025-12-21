@@ -13,6 +13,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onDragStart }) => {
 
   const itemsToRender = mode === 'sample' ? INITIAL_PALETTE_ITEMS : ADVANCED_PALETTE_ITEMS;
 
+  const getPreviewLatex = (latex: string) => {
+    return latex.replace(
+      /<<\s*\d+\s*>>/g, 
+      '\\htmlClass{math-slot-preview}{\\color{transparent}{00}}'
+    );
+  };
+
   return (
     <aside className="w-80 bg-white border-l border-slate-200 flex flex-col shadow-xl z-20 h-full">
       <div className="p-4 border-b border-slate-100 bg-slate-50">
@@ -57,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onDragStart }) => {
 
               <div className="bg-slate-50 rounded p-2 flex justify-center items-center border border-slate-100 pointer-events-none min-h-[3rem]">
                 {item.latex ? (
-                     <MathRender latex={item.latex} className="text-sm" />
+                     <MathRender latex={getPreviewLatex(item.latex)} className="text-sm" />
                 ) : (
                      <span className="text-slate-400 font-mono bg-white px-2 py-1 rounded border border-dashed border-slate-300 text-xs">
                        [ 数値 ]

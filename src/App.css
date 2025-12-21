@@ -40,3 +40,40 @@
 .read-the-docs {
   color: #888;
 }
+
+.math-slot {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  padding: 0 2px;
+}
+
+.math-slot:hover {
+  background-color: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.math-slot-empty,
+.math-slot-preview {
+  border: 2px dashed #64748b !important;
+  
+  background-color: #e0f2fe !important;
+  
+  display: inline-block !important;
+  
+  border-radius: 4px;
+  
+  min-width: 1.5em;
+  min-height: 1.5em;
+  
+  text-align: center;
+  margin: 0 2px;
+  vertical-align: middle;
+
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.math-slot-empty:hover {
+    border-color: #2563eb !important;
+    background-color: #bfdbfe !important;
+}

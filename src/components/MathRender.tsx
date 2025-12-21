@@ -12,6 +12,8 @@ export const MathRender: React.FC<MathRenderProps> = ({ latex, className }) => {
       return katex.renderToString(latex, {
         throwOnError: false,
         displayMode: true,
+        trust: true,
+        strict: false
       });
     } catch (error) {
       console.error('KaTeX rendering error:', error);
